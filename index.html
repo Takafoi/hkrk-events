@@ -106,21 +106,16 @@
       color: var(--muted);
       margin-top: 2rem;
     }
-    /* Twitter panel */
-    #panel-twitter {
-      display: none;
+    .x-link {
+      display: block;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-decoration: none;
+      margin-bottom: 1.25rem;
+      transition: color 0.15s;
     }
-    #panel-twitter.active {
-      display: flex;
-      justify-content: center;
-    }
-    .twitter-embed-wrap {
-      width: 100%;
-      max-width: 550px;
-      /* Override twitter widget background to blend in */
-      border-radius: 12px;
-      overflow: hidden;
-    }
+    .x-link:hover { color: var(--text); }
   </style>
 </head>
 <body>
@@ -132,8 +127,8 @@
     <div class="tabs">
       <button class="tab active" onclick="showTab('events-upcoming', this)">今後のイベント</button>
       <button class="tab" onclick="showTab('events-all', this)">すべて</button>
-      <button class="tab" onclick="showTab('twitter', this)">X (Twitter)</button>
     </div>
+    <a class="x-link" href="https://x.com/hokuriku_idolbu" target="_blank" rel="noopener">𝕏 @hokuriku_idolbu を開く →</a>
 
     <div id="panel-events-upcoming" class="panel active">
       <div id="list-upcoming" class="event-list"></div>
@@ -143,22 +138,9 @@
       <div id="list-all" class="event-list"></div>
     </div>
 
-    <div id="panel-twitter" class="panel">
-      <div class="twitter-embed-wrap">
-        <a class="twitter-timeline"
-           data-theme="dark"
-           data-height="600"
-           data-chrome="noheader nofooter noborders transparent"
-           href="https://twitter.com/hokuriku_idolbu">
-          Tweets by hokuriku_idolbu
-        </a>
-      </div>
-    </div>
-
     <p id="updated" class="updated"></p>
   </div>
 
-  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
   <script>
     let allEvents = [];
 
