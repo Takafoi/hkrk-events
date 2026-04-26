@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ほくりくアイドル部 イベント情報</title>
+  <style>
+    :root {
+      --bg: #0f0f14;
+      --card: #1a1a24;
+      --border: #2a2a3a;
+      --accent: #e85c8a;
+      --text: #e8e8f0;
+      --muted: #888899;
+      --future: #4ade80;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+      min-height: 100vh;
+      padding: 1.5rem 1rem;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+    .subtitle {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .tab {
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .event-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: border-color 0.15s;
+    }
+    .event-card:hover { border-color: var(--accent); }
+    .event-card .date {
+      font-size: 0.8rem;
+      color: var(--future);
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+    .event-card.past .date { color: var(--muted); }
+    .event-card .title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      line-height: 1.4;
+    }
+    .event-card .venue {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem;
+    }
+    .updated {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ほくりくアイドル部</h1>
+    <p class="subtitle">イベント情報</p>
+  </header>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" onclick="filter('upcoming')">今後のイベント</button>
+      <button class="tab" onclick="filter('all')">すべて</button>
+    </div>
+    <div id="list" class="event-list"></div>
+    <p id="updated" class="updated"></p>
+  </div>
+
+  <script>
+    let allEvents = [];
+    let currentFilter = 'upcoming';
+
+    function formatDate(dateStr) {
+      const [y, m, d] = dateStr.split('-');
+      return `${y}年${parseInt(m)}月${parseInt(d)}日`;
+    }
+
+    function render(events) {
+      const list = document.getElementById('list');
+      if (!events.length) {
+        list.innerHTML = '<p class="empty">イベントがありません</p>';
+        return;
+      }
+      list.innerHTML = events.map(e => {
+        const isPast = e.date < new Date().toISOString().slice(0, 10);
+        return `
+          <a class="event-card${isPast ? ' past' : ''}" href="${e.url}" target="_blank" rel="noopener">
+            <div class="date">${formatDate(e.date)}</div>
+            <div class="title">${e.title}</div>
+            ${e.venue ? `<div class="venue">📍 ${e.venue}</div>` : ''}
+          </a>`;
+      }).join('');
+    }
+
+    function filter(type) {
+      currentFilter = type;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      const today = new Date().toISOString().slice(0, 10);
+      const filtered = type === 'upcoming'
+        ? allEvents.filter(e => e.date >= today)
+        : allEvents;
+      render(filtered);
+    }
+
+    fetch('data/events.json')
+      .then(r => r.json())
+      .then(data => {
+        allEvents = data.slice().reverse(); // newest first
+        const today = new Date().toISOString().slice(0, 10);
+        render(allEvents.filter(e => e.date >= today));
+        if (data.length) {
+          const latest = data[data.length - 1].discovered_at;
+          document.getElementById('updated').textContent = `最終更新: ${latest}`;
+        }
+      })
+      .catch(() => {
+        document.getElementById('list').innerHTML =
+          '<p class="empty">データを読み込めませんでした</p>';
+      });
+  </script>
+</body>
+</html>
