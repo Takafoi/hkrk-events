@@ -60,6 +60,8 @@
       max-width: 640px;
       margin: 0 auto;
     }
+    .panel { display: none; }
+    .panel.active { display: block; }
     .event-list {
       display: flex;
       flex-direction: column;
@@ -104,6 +106,21 @@
       color: var(--muted);
       margin-top: 2rem;
     }
+    /* Twitter panel */
+    #panel-twitter {
+      display: none;
+    }
+    #panel-twitter.active {
+      display: flex;
+      justify-content: center;
+    }
+    .twitter-embed-wrap {
+      width: 100%;
+      max-width: 550px;
+      /* Override twitter widget background to blend in */
+      border-radius: 12px;
+      overflow: hidden;
+    }
   </style>
 </head>
 <body>
@@ -113,29 +130,50 @@
   </header>
   <div class="container">
     <div class="tabs">
-      <button class="tab active" onclick="filter('upcoming')">今後のイベント</button>
-      <button class="tab" onclick="filter('all')">すべて</button>
+      <button class="tab active" onclick="showTab('events-upcoming', this)">今後のイベント</button>
+      <button class="tab" onclick="showTab('events-all', this)">すべて</button>
+      <button class="tab" onclick="showTab('twitter', this)">X (Twitter)</button>
     </div>
-    <div id="list" class="event-list"></div>
+
+    <div id="panel-events-upcoming" class="panel active">
+      <div id="list-upcoming" class="event-list"></div>
+    </div>
+
+    <div id="panel-events-all" class="panel">
+      <div id="list-all" class="event-list"></div>
+    </div>
+
+    <div id="panel-twitter" class="panel">
+      <div class="twitter-embed-wrap">
+        <a class="twitter-timeline"
+           data-theme="dark"
+           data-height="600"
+           data-chrome="noheader nofooter noborders transparent"
+           href="https://twitter.com/hokuriku_idolbu">
+          Tweets by hokuriku_idolbu
+        </a>
+      </div>
+    </div>
+
     <p id="updated" class="updated"></p>
   </div>
 
+  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
   <script>
     let allEvents = [];
-    let currentFilter = 'upcoming';
 
     function formatDate(dateStr) {
       const [y, m, d] = dateStr.split('-');
       return `${y}年${parseInt(m)}月${parseInt(d)}日`;
     }
 
-    function render(events) {
-      const list = document.getElementById('list');
+    function renderList(containerId, events) {
+      const el = document.getElementById(containerId);
       if (!events.length) {
-        list.innerHTML = '<p class="empty">イベントがありません</p>';
+        el.innerHTML = '<p class="empty">イベントがありません</p>';
         return;
       }
-      list.innerHTML = events.map(e => {
+      el.innerHTML = events.map(e => {
         const isPast = e.date < new Date().toISOString().slice(0, 10);
         return `
           <a class="event-card${isPast ? ' past' : ''}" href="${e.url}" target="_blank" rel="noopener">
@@ -146,30 +184,27 @@
       }).join('');
     }
 
-    function filter(type) {
-      currentFilter = type;
+    function showTab(name, btn) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
-      const today = new Date().toISOString().slice(0, 10);
-      const filtered = type === 'upcoming'
-        ? allEvents.filter(e => e.date >= today)
-        : allEvents;
-      render(filtered);
+      document.getElementById('panel-' + name).classList.add('active');
+      btn.classList.add('active');
     }
 
     fetch('data/events.json')
       .then(r => r.json())
       .then(data => {
-        allEvents = data.slice().reverse(); // newest first
+        allEvents = data.slice().reverse();
         const today = new Date().toISOString().slice(0, 10);
-        render(allEvents.filter(e => e.date >= today));
+        renderList('list-upcoming', allEvents.filter(e => e.date >= today));
+        renderList('list-all', allEvents);
         if (data.length) {
           const latest = data[data.length - 1].discovered_at;
           document.getElementById('updated').textContent = `最終更新: ${latest}`;
         }
       })
       .catch(() => {
-        document.getElementById('list').innerHTML =
+        document.getElementById('list-upcoming').innerHTML =
           '<p class="empty">データを読み込めませんでした</p>';
       });
   </script>
